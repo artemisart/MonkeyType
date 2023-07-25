@@ -48,7 +48,7 @@ class CallTraceStore(metaclass=ABCMeta):
             f"does not implement make_store()"
         )
 
-    def list_modules(self) -> List[str]:
+    def list_modules(self) -> Iterable[str]:
         """List of traced modules from the backing store"""
         raise NotImplementedError(
             f"Your CallTraceStore ({self.__class__.__module__}.{self.__class__.__name__}) "

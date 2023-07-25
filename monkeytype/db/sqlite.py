@@ -92,10 +92,7 @@ class SQLiteStore(CallTraceStore):
             )
         with self.conn:
             self.conn.executemany(
-                "INSERT INTO {table} VALUES (?, ?, ?, ?, ?, ?)".format(
-                    table=self.table
-                ),
-                values,
+                f"INSERT INTO {self.table} VALUES (?, ?, ?, ?, ?, ?)", values
             )
 
     def filter(
@@ -105,18 +102,16 @@ class SQLiteStore(CallTraceStore):
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(sql_query, values)
-            return [CallTraceRow(*row) for row in cur.fetchall()]
+            return [CallTraceRow(*row) for row in cur]
 
-    def list_modules(self) -> List[str]:
+    def list_modules(self) -> Iterable[str]:
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(
+                f"""
+                SELECT module FROM {self.table}
+                GROUP BY module
+                ORDER BY module
                 """
-                        SELECT module FROM {table}
-                        GROUP BY module
-                        ORDER BY date(created_at) DESC
-                        """.format(
-                    table=self.table
-                )
             )
-            return [row[0] for row in cur.fetchall() if row[0]]
+            return (row[0] for row in cur)

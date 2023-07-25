@@ -220,12 +220,9 @@ def test_display_list_of_modules(store, db_file, stdout, stderr):
 
 def test_display_list_of_modules_no_modules(store, db_file, stdout, stderr):
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-        ret = cli.main(['list-modules'], stdout, stderr)
-    expected = ""
-    assert stderr.getvalue() == expected
-    expected = "\n"
-    assert stdout.getvalue() == expected
-    assert ret == 0
+        assert cli.main(['list-modules'], stdout, stderr) == 0
+    assert stderr.getvalue() == ""
+    assert stdout.getvalue() == ""
 
 
 def test_display_sample_count(stderr):

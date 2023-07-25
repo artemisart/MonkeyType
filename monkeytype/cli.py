@@ -267,10 +267,9 @@ def print_stub_handler(
 def list_modules_handler(
     args: argparse.Namespace, stdout: IO[str], stderr: IO[str]
 ) -> None:
-    output, file = None, stdout
     modules = args.config.trace_store().list_modules()
-    output = "\n".join(modules)
-    print(output, file=file)
+    for module in modules:
+        print(module, file=stdout)
 
 
 def run_handler(args: argparse.Namespace, stdout: IO[str], stderr: IO[str]) -> None:
