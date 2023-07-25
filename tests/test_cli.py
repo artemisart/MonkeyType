@@ -104,7 +104,7 @@ def test_generate_stub(store: SQLiteStore, stdout: io.StringIO, stderr: io.Strin
         CallTrace(func2, {'a': int, 'b': int}, NoneType),
     ]
     store.add(traces)
-    ret = cli.main(['stub', func.__module__], stdout, stderr)
+    assert cli.main(['stub', func.__module__], stdout, stderr) == 0
     expected = """def func(a: int, b: str) -> None: ...
 
 
@@ -112,7 +112,6 @@ def func2(a: int, b: int) -> None: ...
 """
     assert stdout.getvalue() == expected
     assert stderr.getvalue() == ''
-    assert ret == 0
 
 
 def test_print_stub_ignore_existing_annotations(
@@ -123,12 +122,11 @@ def test_print_stub_ignore_existing_annotations(
     ]
     store.add(traces)
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-        ret = cli.main(['stub', func.__module__, '--ignore-existing-annotations'], stdout, stderr)
+        assert cli.main(['stub', func.__module__, '--ignore-existing-annotations'], stdout, stderr) == 0
     expected = """def func_anno(a: int, b: int) -> int: ...
 """
     assert stdout.getvalue() == expected
     assert stderr.getvalue() == ''
-    assert ret == 0
 
 
 def test_get_diff(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, stderr: io.StringIO):
@@ -138,7 +136,7 @@ def test_get_diff(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, st
     ]
     store.add(traces)
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-        ret = cli.main(['stub', func.__module__, '--diff'], stdout, stderr)
+        assert cli.main(['stub', func.__module__, '--diff'], stdout, stderr) == 0
     expected = """- def func_anno(a: int, b: str) -> None: ...
 ?                          ^ -     ^^ ^
 + def func_anno(a: int, b: int) -> int: ...
@@ -146,7 +144,6 @@ def test_get_diff(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, st
 """
     assert stdout.getvalue() == expected
     assert stderr.getvalue() == ''
-    assert ret == 0
 
 
 def test_get_diff2(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, stderr: io.StringIO):
@@ -166,7 +163,7 @@ def test_get_diff2(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, s
     ]
     store.add(traces)
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-        ret = cli.main(['stub', func.__module__, '--diff'], stdout, stderr)
+        assert cli.main(['stub', func.__module__, '--diff'], stdout, stderr) == 0
     expected = """- def func_anno(a: int, b: str) -> None: ...
 ?                          ^ -     ^^ ^
 + def func_anno(a: int, b: int) -> int: ...
@@ -189,7 +186,6 @@ def test_get_diff2(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, s
 """
     assert stdout.getvalue() == expected
     assert stderr.getvalue() == ''
-    assert ret == 0
 
 
 @pytest.mark.parametrize(
@@ -199,29 +195,23 @@ def test_get_diff2(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, s
         (func.__module__ + ':foo', f"No traces found for specifier {func.__module__}:foo\n"),
     ],
 )
-def test_no_traces(
-     db_file: BinaryIO, stdout: io.StringIO, stderr: io.StringIO, arg: str, error: str
-):
+def test_no_traces(db_file: BinaryIO, stdout: io.StringIO, stderr: io.StringIO, arg: str, error: str):
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-        ret = cli.main(['stub', arg], stdout, stderr)
+        assert cli.main(['stub', arg], stdout, stderr) == 0
     assert stderr.getvalue() == error
     assert stdout.getvalue() == ''
-    assert ret == 0
 
 
 def test_display_list_of_modules(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, stderr: io.StringIO):
-    traces = [
-        CallTrace(func, {'a': int, 'b': str}, NoneType),
-    ]
-    store.add(traces)
+    store.add(
+        [
+            CallTrace(func, {'a': int, 'b': str}, NoneType),
+        ]
+    )
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-        ret = cli.main(['list-modules'], stdout, stderr)
-
-    expected = ""
-    assert stderr.getvalue() == expected
-    expected = "tests.test_cli\n"
-    assert stdout.getvalue() == expected
-    assert ret == 0
+        assert cli.main(['list-modules'], stdout, stderr) == 0
+    assert stderr.getvalue() == ""
+    assert stdout.getvalue() == "tests.test_cli\n"
 
 
 def test_display_list_of_modules_no_modules(db_file: BinaryIO, stdout: io.StringIO, stderr: io.StringIO):
@@ -247,50 +237,47 @@ Annotation for tests.test_cli.func2 based on 3 call trace(s).
 
 
 def test_display_sample_count_from_cli(store: SQLiteStore, db_file: BinaryIO, stdout: io.StringIO, stderr: io.StringIO):
-    traces = [
-        CallTrace(func, {'a': int, 'b': str}, NoneType),
-        CallTrace(func2, {'a': int, 'b': int}, NoneType),
-    ]
-    store.add(traces)
+    store.add(
+        [
+            CallTrace(func, {'a': int, 'b': str}, NoneType),
+            CallTrace(func2, {'a': int, 'b': int}, NoneType),
+        ]
+    )
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-        ret = cli.main(['stub', func.__module__, '--sample-count'], stdout, stderr)
+        assert cli.main(['stub', func.__module__, '--sample-count'], stdout, stderr) == 0
     expected = """Annotation for tests.test_cli.func based on 1 call trace(s).
 Annotation for tests.test_cli.func2 based on 1 call trace(s).
 """
     assert stderr.getvalue() == expected
-    assert ret == 0
 
 
 def test_quiet_failed_traces(store: SQLiteStore, stdout: io.StringIO, stderr: io.StringIO):
-    traces = [
-        CallTrace(func, {'a': int, 'b': str}, NoneType),
-        CallTrace(func2, {'a': int, 'b': int}, NoneType),
-    ]
-    store.add(traces)
+    store.add(
+        [
+            CallTrace(func, {'a': int, 'b': str}, NoneType),
+            CallTrace(func2, {'a': int, 'b': int}, NoneType),
+        ]
+    )
     with mock.patch("monkeytype.encoding.CallTraceRow.to_trace", side_effect=MonkeyTypeError("the-trace")):
-        ret = cli.main(['stub', func.__module__], stdout, stderr)
+        assert cli.main(['stub', func.__module__], stdout, stderr) == 0
     assert "2 traces failed to decode" in stderr.getvalue()
-    assert ret == 0
 
 
 def test_verbose_failed_traces(store: SQLiteStore, stdout: io.StringIO, stderr: io.StringIO):
-    traces = [
-        CallTrace(func, {'a': int, 'b': str}, NoneType),
-        CallTrace(func2, {'a': int, 'b': int}, NoneType),
-    ]
-    store.add(traces)
+    store.add(
+        [
+            CallTrace(func, {'a': int, 'b': str}, NoneType),
+            CallTrace(func2, {'a': int, 'b': int}, NoneType),
+        ]
+    )
     with mock.patch("monkeytype.encoding.CallTraceRow.to_trace", side_effect=MonkeyTypeError("the-trace")):
-        ret = cli.main(['-v', 'stub', func.__module__], stdout, stderr)
+        assert cli.main(['-v', 'stub', func.__module__], stdout, stderr) == 0
     assert "WARNING: Failed decoding trace: the-trace" in stderr.getvalue()
-    assert ret == 0
 
 
 def test_cli_context_manager_activated(capsys: pytest.CaptureFixture[str], stdout: io.StringIO, stderr: io.StringIO):
-    ret = cli.main(['-c', f'{__name__}:LoudContextConfig()', 'stub', 'some.module'], stdout, stderr)
-    out, err = capsys.readouterr()
-    assert out == "IN SETUP: stub\nIN TEARDOWN: stub\n"
-    assert err == ""
-    assert ret == 0
+    assert cli.main(['-c', f'{__name__}:LoudContextConfig()', 'stub', 'some.module'], stdout, stderr) == 0
+    assert "IN SETUP: stub\nIN TEARDOWN: stub\n", "" == capsys.readouterr()
 
 
 def test_pathlike_parameter(
@@ -299,8 +286,7 @@ def test_pathlike_parameter(
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
         with pytest.raises(SystemExit):
             cli.main(['stub', 'test/foo.py:bar'], stdout, stderr)
-        _out, err = capsys.readouterr()
-        assert "test/foo.py does not look like a valid Python import path" in err
+        assert "test/foo.py does not look like a valid Python import path" in capsys.readouterr().err
 
 
 def test_toplevel_filename_parameter(db_file: BinaryIO, stdout: io.StringIO, stderr: io.StringIO):
@@ -312,7 +298,7 @@ def test_toplevel_filename_parameter(db_file: BinaryIO, stdout: io.StringIO, std
             return True if x == filename else orig_exists(x)
 
         with mock.patch('os.path.exists', side_effect=side_effect) as mock_exists:
-            ret = cli.main(['stub', filename], stdout, stderr)
+            assert cli.main(['stub', filename], stdout, stderr) == 0
             mock_exists.assert_called_with(filename)
         err_msg = (
             f"No traces found for {filename}; did you pass a filename instead of a module name? "
@@ -320,7 +306,6 @@ def test_toplevel_filename_parameter(db_file: BinaryIO, stdout: io.StringIO, std
         )
         assert stderr.getvalue() == err_msg
         assert stdout.getvalue() == ''
-        assert ret == 0
 
 
 @pytest.mark.usefixtures("collector")
@@ -332,9 +317,8 @@ def test_apply_stub_init(store: SQLiteStore, db_file, stdout, stderr, collector)
     store.add(collector.traces)
 
     with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-        ret = cli.main(['apply', Foo.__module__], stdout, stderr)
+        assert cli.main(['apply', Foo.__module__], stdout, stderr) == 0
 
-    assert ret == 0
     assert 'def __init__(self, arg1: str, arg2: int) -> None:' in stdout.getvalue()
 
 
@@ -352,11 +336,9 @@ def my_test_function(a, b):
         with mock.patch('sys.path', sys.path + [tempdir]):
             import my_test_module as mtm
 
-            traces = [CallTrace(mtm.my_test_function, {'a': int, 'b': str}, NoneType)]
-            store.add(traces)
+            store.add([CallTrace(mtm.my_test_function, {'a': int, 'b': str}, NoneType)])
             with mock.patch.dict(os.environ, {DefaultConfig.DB_PATH_VAR: db_file.name}):
-                ret = cli.main(['apply', 'my_test_module'], stdout, stderr)
-    assert ret == 0
+                assert cli.main(['apply', 'my_test_module'], stdout, stderr) == 0
     assert 'warning:' not in stdout.getvalue()
 
 
