@@ -39,7 +39,7 @@ def simple_add(a: int, b: int) -> int:
     return a + b
 
 
-def has_optional_kwarg(a: int, b: str = None) -> Optional[FrameType]:
+def has_optional_kwarg(a: int, b: Optional[str] = None) -> Optional[FrameType]:
     return inspect.currentframe()
 
 
@@ -182,18 +182,18 @@ class LazyValue:
 
 
 class TestTraceCalls:
-    def test_simple_call(self, collector):
+    def test_simple_call(self, collector: TraceCollector):
         with trace_calls(collector, max_typed_dict_size=0):
             simple_add(1, 2)
         assert collector.traces == [CallTrace(simple_add, {'a': int, 'b': int}, int)]
 
-    def test_flushes(self, collector):
+    def test_flushes(self, collector: TraceCollector):
         with trace_calls(collector, max_typed_dict_size=0):
             pass
 
         assert collector.flushed
 
-    def test_callee_throws(self, collector):
+    def test_callee_throws(self, collector: TraceCollector):
         with trace_calls(collector, max_typed_dict_size=0):
             try:
                 throw(should_recover=False)
@@ -201,7 +201,7 @@ class TestTraceCalls:
                 pass
         assert collector.traces == [CallTrace(throw, {'should_recover': bool})]
 
-    def test_nested_callee_throws_caller_doesnt_recover(self, collector):
+    def test_nested_callee_throws_caller_doesnt_recover(self, collector: TraceCollector):
         with trace_calls(collector, max_typed_dict_size=0):
             try:
                 nested_throw(should_recover=False)
@@ -213,12 +213,12 @@ class TestTraceCalls:
         ]
         assert collector.traces == expected
 
-    def test_callee_throws_recovers(self, collector):
+    def test_callee_throws_recovers(self, collector: TraceCollector):
         with trace_calls(collector, max_typed_dict_size=0):
             throw(should_recover=True)
         assert collector.traces == [CallTrace(throw, {'should_recover': bool}, NoneType)]
 
-    def test_nested_callee_throws_recovers(self, collector):
+    def test_nested_callee_throws_recovers(self, collector: TraceCollector):
         with trace_calls(collector, max_typed_dict_size=0):
             nested_throw(should_recover=True)
         expected = [
@@ -227,7 +227,7 @@ class TestTraceCalls:
         ]
         assert collector.traces == expected
 
-    def test_caller_handles_callee_exception(self, collector):
+    def test_caller_handles_callee_exception(self, collector: TraceCollector):
         with trace_calls(collector, max_typed_dict_size=0):
             recover_from_nested_throw()
         expected = [
@@ -236,13 +236,13 @@ class TestTraceCalls:
         ]
         assert collector.traces == expected
 
-    def test_generator_trace(self, collector):
+    def test_generator_trace(self, collector: TraceCollector):
         with trace_calls(collector, max_typed_dict_size=0):
             for _ in squares(3):
                 pass
         assert collector.traces == [CallTrace(squares, {'n': int}, NoneType, int)]
 
-    def test_return_none(self, collector):
+    def test_return_none(self, collector: TraceCollector):
         """Ensure traces have a return_type of NoneType for functions that return a value of None"""
         with trace_calls(collector, max_typed_dict_size=0):
             implicit_return_none()
@@ -253,21 +253,21 @@ class TestTraceCalls:
         ]
         assert collector.traces == expected
 
-    def test_access_property(self, collector):
+    def test_access_property(self, collector: TraceCollector):
         """Check that we correctly trace functions decorated with @property"""
         o = Oracle()
         with trace_calls(collector, max_typed_dict_size=0):
             o.meaning_of_life
         assert collector.traces == [CallTrace(Oracle.meaning_of_life.fget, {'self': Oracle}, int)]
 
-    def test_filtering(self, collector):
+    def test_filtering(self, collector: TraceCollector):
         """If supplied, the code filter should decide which code objects are traced"""
         with trace_calls(collector, max_typed_dict_size=0, code_filter=lambda code: code.co_name == 'simple_add'):
             simple_add(1, 2)
             explicit_return_none()
         assert collector.traces == [CallTrace(simple_add, {'a': int, 'b': int}, int)]
 
-    def test_lazy_value(self, collector):
+    def test_lazy_value(self, collector: TraceCollector):
         """Check that function lookup does not invoke custom descriptors.
 
         LazyValue is an interesting corner case. Internally, LazyValue stores a

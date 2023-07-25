@@ -30,7 +30,7 @@ def logger() -> CallTraceStoreLogger:
     return CallTraceStoreLogger(SQLiteStore(conn))
 
 
-def test_round_trip(logger):
+def test_round_trip(logger: CallTraceStoreLogger):
     with patch.object(main_func, '__module__', '__main__'):
         with trace_calls(logger, max_typed_dict_size=0):
             main_func(int, str)

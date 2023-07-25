@@ -28,7 +28,7 @@ def store() -> SQLiteStore:
     return SQLiteStore(conn)
 
 
-def test_round_trip(store):
+def test_round_trip(store: SQLiteStore):
     """Save and retrieve a trace"""
     trace = CallTrace(func, {'a': int, 'b': str}, None)
     store.add([trace])
@@ -37,7 +37,7 @@ def test_round_trip(store):
     assert thunks[0].to_trace() == trace
 
 
-def test_dedup(store):
+def test_dedup(store: SQLiteStore):
     """The store shouldn't return duplicates"""
     trace = CallTrace(func, {'a': int, 'b': str}, None)
     store.add([trace, trace, trace, trace])
@@ -46,7 +46,7 @@ def test_dedup(store):
     assert thunks[0].to_trace() == trace
 
 
-def test_qualname_filtering(store):
+def test_qualname_filtering(store: SQLiteStore):
     """Prefix match on qualname"""
     traces = [
         CallTrace(func, {'a': int, 'b': str}, None),
@@ -58,7 +58,7 @@ def test_qualname_filtering(store):
     assert traces == [thunk.to_trace() for thunk in thunks]
 
 
-def test_limit_resultset(store):
+def test_limit_resultset(store: SQLiteStore):
     """Limit the number of results returned"""
     traces = [
         CallTrace(func, {'a': int, 'b': str}, None),
